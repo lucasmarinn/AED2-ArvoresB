@@ -39,5 +39,5 @@ As Árvores B e B+ são estruturas amplamente utilizadas em bancos de dados e si
 
 1. **Clone o repositório**:
    ```bash
-   git clone https://github.com/SeuUsuario/NomeDoRepositorio.git
-   cd NomeDoRepositorio
+   git clone https://github.com/lucasmarinn/AED2-ArvoresB.git
+   cd AED2-ArvoresB
