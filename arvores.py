@@ -2,6 +2,8 @@ import random
 import time
 import string
 from memory_profiler import profile
+import matplotlib.pyplot as plt  # Para gerar os gráficos
+
 
 # Definindo a classe Produto com categoria
 class Produto:
@@ -177,54 +179,42 @@ def criar_produtos(qtd):
 # Função para testar a performance
 def testar_performance(estrutura, qtd_produtos, t=3):
     produtos = criar_produtos(qtd_produtos)
-    
+
     if estrutura == "BTree":
         tree = BTree(t)
-        # Teste de inserção
-        start_time = time.time()
-        for produto in produtos:
-            tree.insert(produto)
-        insercao_tempo = time.time() - start_time
-
-        # Teste de busca
-        start_time = time.time()
-        for produto in produtos:
-            tree.search(tree.root, produto.produto_id)
-        busca_tempo = time.time() - start_time
-
-        # Teste de travessia
-        start_time = time.time()
-        tree.traverse()
-        travessia_tempo = time.time() - start_time
-
-        # Exibição dos resultados de tempo
-        print(f"Árvore B - Tempo de inserção: {insercao_tempo:.4f} segundos")
-        print(f"Árvore B - Tempo de busca: {busca_tempo:.4f} segundos")
-        print(f"Árvore B - Tempo de travessia: {travessia_tempo:.4f} segundos")
-
     elif estrutura == "BPlusTree":
-        b_plus_tree = BPlusTree(t)
-        # Teste de inserção
-        start_time = time.time()
-        for produto in produtos:
-            b_plus_tree.insert(produto)
-        insercao_tempo = time.time() - start_time
+        tree = BPlusTree(t)
+    else:
+        raise ValueError("Estrutura inválida.")
 
-        # Teste de busca
-        start_time = time.time()
-        for produto in produtos:
-            b_plus_tree.search(b_plus_tree.root, produto.produto_id)
-        busca_tempo = time.time() - start_time
+    # Teste de inserção
+    start_time = time.time()
+    for produto in produtos:
+        tree.insert(produto)
+    insercao_tempo = time.time() - start_time
 
-        # Teste de travessia (apenas folhas)
-        start_time = time.time()
-        b_plus_tree.traverse_leaf()
-        travessia_tempo = time.time() - start_time
+    # Teste de busca
+    start_time = time.time()
+    for produto in produtos:
+        tree.search(tree.root, produto.produto_id)
+    busca_tempo = time.time() - start_time
 
-        # Exibição dos resultados de tempo
-        print(f"Árvore B+ - Tempo de inserção: {insercao_tempo:.4f} segundos")
-        print(f"Árvore B+ - Tempo de busca: {busca_tempo:.4f} segundos")
-        print(f"Árvore B+ - Tempo de travessia (folhas): {travessia_tempo:.4f} segundos")
+    # Teste de travessia
+    start_time = time.time()
+    if estrutura == "BTree":
+        tree.traverse()
+    elif estrutura == "BPlusTree":
+        tree.traverse_leaf()
+    travessia_tempo = time.time() - start_time
+
+    # Retornar tempos como dicionário
+    return {
+        "insercao": insercao_tempo,
+        "busca": busca_tempo,
+        "travessia": travessia_tempo
+    }
+
+
 
 def menu():
     print("\nMenu:")
@@ -232,18 +222,64 @@ def menu():
     print("2. Testar Árvore B+")
     print("3. Sair")
 
+
+def executar_teste_multiplo(estrutura):
+    # Configurações de testes
+    quantidades = [10000, 100000, 1000000]
+    graus = [2, 3, 5]
+    repeticoes = 6
+
+    # Resultados acumulados para cálculo das médias
+    resultados = {
+        "insercao": [],
+        "busca": [],
+        "travessia": []
+    }
+
+    for qtd in quantidades:
+        for t in graus:
+            tempos_insercao = []
+            tempos_busca = []
+            tempos_travessia = []
+
+            for _ in range(repeticoes):
+                tempos = testar_performance(estrutura, qtd, t)
+                tempos_insercao.append(tempos["insercao"])
+                tempos_busca.append(tempos["busca"])
+                tempos_travessia.append(tempos["travessia"])
+
+            # Calcular a média dos tempos
+            resultados["insercao"].append((qtd, t, sum(tempos_insercao) / repeticoes))
+            resultados["busca"].append((qtd, t, sum(tempos_busca) / repeticoes))
+            resultados["travessia"].append((qtd, t, sum(tempos_travessia) / repeticoes))
+
+    # Plotar os resultados
+    plotar_graficos(resultados, estrutura)
+
+def plotar_graficos(resultados, estrutura):
+    for tipo in ["insercao", "busca", "travessia"]:
+        plt.figure()
+        for qtd, t, tempo in resultados[tipo]:
+            plt.scatter(t, tempo, label=f"Produtos: {qtd}")
+            plt.plot(t, tempo, marker='o')  # Para conectar os pontos
+
+        plt.title(f"{estrutura} - Desempenho ({tipo})")
+        plt.xlabel("Grau da Árvore (t)")
+        plt.ylabel("Tempo (s)")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
 def main():
     while True:
         menu()
         choice = input("Escolha uma opção: ")
         if choice == "1":
-            qtd_produtos = int(input("Digite a quantidade de produtos: "))
-            t = int(input("Digite o grau da Árvore B (ex: 3): "))
-            testar_performance("BTree", qtd_produtos, t)
+            print("Executando testes para Árvore B...")
+            executar_teste_multiplo("BTree")
         elif choice == "2":
-            qtd_produtos = int(input("Digite a quantidade de produtos: "))
-            t = int(input("Digite o grau da Árvore B+ (ex: 4): "))
-            testar_performance("BPlusTree", qtd_produtos, t)
+            print("Executando testes para Árvore B+...")
+            executar_teste_multiplo("BPlusTree")
         elif choice == "3":
             print("Saindo...")
             break
@@ -252,3 +288,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
